@@ -16,7 +16,7 @@ function onFormSubmit(event) {
 
     if(email === "" || message === "") {
         return;
-    }
+    };
 
     event.currentTarget.reset();
     localStorage.removeItem("feedback-form-state");
