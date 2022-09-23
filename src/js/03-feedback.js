@@ -1,45 +1,48 @@
-import throttle from "lodash.throttle";
+import throttle from 'lodash.throttle';
 
-const form = document.querySelector(".feedback-form");
-form.addEventListener("input", throttle(onFormInput, 500));
-const formData = localStorage.getItem("feedback-form-state") ?
-JSON.parse(localStorage.getItem("feedback-form-state")) : {};
+const formRef = document.querySelector('.feedback-form');
+const LOCAL_STORAGE_KEY = 'feedback-form-state';
 
-form.addEventListener("submit", onFormSubmit);
+import { save, load, remove } from "./storage"
 
-function onFormSubmit(event) {
-    event.preventDefault();
-    const keyParsed = JSON.parse(localStorage.getItem("feedback-form-state"));
+initPage();
 
-    const email = event.currentTarget.elements.email.value;
-    const message = event.currentTarget.elements.message.value;
+const onFormInput = event => {
+    const { name, value } = event.target;
 
-    if(email === "" || message === "") {
-        return;
-    };
+    let saveData = load(LOCAL_STORAGE_KEY);
 
-    event.currentTarget.reset();
-    localStorage.removeItem("feedback-form-state");
-}
+    saveData = saveData ? saveData : {};
 
-function onFormInput(event) {
-    formData[event.target.name] = event.target.value;
-    localStorage.setItem("feedback-form-state", JSON.stringify(formData));
-}
+    saveData[name] = value;
+        save(LOCAL_STORAGE_KEY, saveData);
+};
 
-setFormValues();
+const throttledOnFormInput = throttle(onFormInput, 500);
 
-function setFormValues() {
-    const savedInfo = localStorage.getItem("feedback-form-state");
-    console.log(savedInfo);
+formRef.addEventListener('input', throttledOnFormInput);
 
-    if (savedInfo) {
-        const data = JSON.parse(savedInfo);
-        if(data.email) {
-            form.elements.email.value = data.email;
-        }
-        if(data.message) {
-            form.elements.message.value = data.message;
-        }
+function initPage() {
+  const saveData = load(LOCAL_STORAGE_KEY);
+
+  if (!saveData) {
+    return
+  }
+      Object.entries(saveData).forEach(([name, value]) => {
+        formRef.elements[name].value = value;
+      });
     }
-}
+
+const handleSubmit = event => {
+  event.preventDefault();
+
+  const {
+    elements: { email, message },
+  } = event.currentTarget;
+  console.log({ email: email.value, message: message.value });
+
+  event.currentTarget.reset();
+  remove(LOCAL_STORAGE_KEY);
+};
+
+formRef.addEventListener('submit', handleSubmit);
